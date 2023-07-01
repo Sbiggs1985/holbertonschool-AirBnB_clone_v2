@@ -132,16 +132,17 @@ class HBNBCommand(cmd.Cmd):
             if "=" not in arg:
                 continue
 
-        key, value = arg.split("=")
-        value = value.replace('_', ' ')
+            key, value = arg.split("=")
+            value = value.replace('_', ' ')
 
-        if value[0] == '"' and value[-1] == '"':
-            value = value[1:-1]
-        elif '.' in value:
-            try:
-                value = float(value)
-            except ValueError:
-                continue
+            if value[0] == '"' and value[-1] == '"':
+                value = value[1:-1]
+            elif '.' in value:
+                try:
+                    value = float(value)
+                except ValueError:
+                    continue
+
             else:
                 try:
                     value = int(value)
