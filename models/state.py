@@ -3,8 +3,8 @@
 from models.base_model import BaseModel, Base
 from models.city import City
 from sqlalchemy import Column, String
-from os import getenv
 from sqlalchemy.orm import relationship
+import os
 import models
 
 
@@ -13,15 +13,16 @@ class State(BaseModel, Base):
     __tablename__ = 'states'
     name = Column(String(128), nullable=False)
 
-    if getenv('HBNB_TYPE_STORAGE') == 'db':
-        cities = relationship('City', backref='state',
-                              cascade='all, delete, delete-orphan')
+    if os.getenv('HBNB_TYPE_STORAGE') == 'db':
+        cities = relationship("City", backref="state",
+                              cascade="all, delete-orphan")
+
     else:
         @property
-        def cities(self):
-            """Attribute for FileStorage"""
-            city_list = []
-            for el in models.storage.all(City).values():
-                if el.state_id == self.id:
-                    city_list.append(el)
-            return city_list
+        def cities(self):  # +T6
+            """Returns a list of City instances with state_id = id"""
+            cities = []
+            for thing in models.storage.all(City).values():
+                if thing.state_id == self.id:
+                    cities.append(thing)
+            return cities
