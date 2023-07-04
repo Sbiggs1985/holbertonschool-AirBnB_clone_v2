@@ -19,7 +19,7 @@ class State(BaseModel, Base):
 
     else:
         @property
-        def cities(self): 
+        def cities(self):
             """Returns a list of City instances with state_id = id"""
             cities = []
             for thing in models.storage.all(City).values():
