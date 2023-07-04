@@ -2,9 +2,12 @@
 """ Place Module for HBNB project """
 from models.base_model import BaseModel, Base
 from sqlalchemy import Column, String, Integer, Float
-
+""" Imports Stephaine added """
+from sqlalchemy.orm import relationship
 
 class Place(BaseModel, Base):
+    __tablename__ = 'places'
+
     """ A place to stay """
     city_id = Column(String(60), nullible=False)
     user_id = Column(String(60), nullible=False)
@@ -17,3 +20,5 @@ class Place(BaseModel, Base):
     latitude = Column(Float, nullible=False)
     longitude = Column(Float, nullible=False)
     amenity_ids = []
+
+    reviews = relationship("Review", cascade="all, delete", backref="place")
