@@ -2,13 +2,14 @@
 """ Console Module """
 import cmd
 import sys
+from models import storage
 from models.base_model import BaseModel
-from models.user import User
 from models.place import Place
 from models.state import State
 from models.city import City
 from models.amenity import Amenity
 from models.review import Review
+from models.user import User
 
 
 class HBNBCommand(cmd.Cmd):
@@ -32,7 +33,7 @@ class HBNBCommand(cmd.Cmd):
     def preloop(self):
         """Prints if isatty is false"""
         if not sys.__stdin__.isatty():
-            print('(hbnb) ', end="")
+            print('(hbnb)')
 
     def precmd(self, line):
         """Reformat command line for advanced command syntax.
@@ -72,7 +73,6 @@ class HBNBCommand(cmd.Cmd):
                 pline = pline[2].strip()  # pline is now str
                 if pline:
                     # check for *args or **kwargs
-                    # added space around second curly brace in line below
                     if pline[0] == '{' and pline[-1] == '}' \
                             and type(eval(pline)) is dict:
                         _args = pline
@@ -113,35 +113,35 @@ class HBNBCommand(cmd.Cmd):
         """ Overrides the emptyline method of CMD """
         pass
 
-    def do_create(self, args):
-        """ Create an object of any class"""
-        from models import storage
-        list_args = args.split()
-        if not args:
+    def do_create(self, line):
+        """Usage: create <Class name> <param 1> <param 2> <param 3>..."""
+        if not line:
             print("** class name missing **")
             return
-        elif list_args[0] not in HBNBCommand.classes:
+        args = line.split()
+        if args[0] not in HBNBCommand.classes.keys():
             print("** class doesn't exist **")
             return
-        new_instance = HBNBCommand.classes[list_args[0]]()
-        for arg in range(1, len(list_args)):
-            key_value_pair = list_args[arg].partition("=")
-            key_name = key_value_pair[0]
-            key_value = key_value_pair[2]
-            if '\"' in key_value:
-                key_value = key_value[1:-1]
-                key_value = key_value.replace("_", " ")
-            elif "." in key_value:
-                key_value = float(key_value)
+        kwargs = {}
+        for param in range(1, len(args)):
+            ky, vl = args[param].split("=")
+            if vl[0] == '"':
+                vl = vl.replace('_', ' ').strip('"')
             else:
-                key_value = int(key_value)
+                try:
+                    vl = eval(vl)
+                except (SyntaxError, NameError):
+                    continue
+            kwargs[ky] = vl
+        if len(kwargs) == 0:
+            obj = eval(args[0])()
+        else:
+            obj = eval(args[0])(**kwargs)
+        print(obj.id)
+        obj.save()
 
-            if hasattr(new_instance, key_name):
-                setattr(new_instance, key_name, key_value)
-
-        storage.new(new_instance)
-        storage.save()
-        print(new_instance.id)
+    def do_hcf(self, line):
+        storage.hcf(eval(line))
 
     def help_create(self):
         """ Help information for the create method """
@@ -150,7 +150,6 @@ class HBNBCommand(cmd.Cmd):
 
     def do_show(self, args):
         """ Method to show an individual object """
-        from models import storage
         new = args.partition(" ")
         c_name = new[0]
         c_id = new[2]
@@ -184,7 +183,6 @@ class HBNBCommand(cmd.Cmd):
 
     def do_destroy(self, args):
         """ Destroys a specified object """
-        from models import storage
         new = args.partition(" ")
         c_name = new[0]
         c_id = new[2]
@@ -206,7 +204,7 @@ class HBNBCommand(cmd.Cmd):
         key = c_name + "." + c_id
 
         try:
-            del(storage.all()[key])
+            storage.delete(storage.all()[key])
             storage.save()
         except KeyError:
             print("** no instance found **")
@@ -216,25 +214,18 @@ class HBNBCommand(cmd.Cmd):
         print("Destroys an individual instance of a class")
         print("[Usage]: destroy <className> <objectId>\n")
 
-    def do_all(self, args):
+    def do_all(self, line):
         """ Shows all objects, or all objects of a class"""
-        from models import storage
-        print_list = []
-        objects = storage.all()
-
-        if args:
-            args = args.split(' ')[0]  # remove possible trailing args
-            if args not in HBNBCommand.classes:
+        if not line:
+            objs = storage.all()
+        if line:
+            args = line.split()
+            if args[0] not in HBNBCommand.classes.keys():
                 print("** class doesn't exist **")
                 return
-            for k, v in objects.items():
-                if k.split('.')[0] == args:
-                    print_list.append(str(v))
-        else:
-            for k, v in objects.items():
-                print_list.append(str(v))
-
-        print(print_list)
+            else:
+                objs = storage.all(eval(line))
+        print([objs[key].__str__() for key in objs])
 
     def help_all(self):
         """ Help information for the all command """
@@ -243,9 +234,8 @@ class HBNBCommand(cmd.Cmd):
 
     def do_count(self, args):
         """Count current number of class instances"""
-        from models import storage
         count = 0
-        for k, v in storage.all().items():
+        for k, v in storage._FileStorage__objects.items():
             if args == k.split('.')[0]:
                 count += 1
         print(count)
@@ -256,7 +246,6 @@ class HBNBCommand(cmd.Cmd):
 
     def do_update(self, args):
         """ Updates a certain object with new info """
-        from models import storage
         c_name = c_id = att_name = att_val = kwargs = ''
 
         # isolate cls from id/args, ex: (<cls>, delim, <id/args>)
@@ -342,7 +331,6 @@ class HBNBCommand(cmd.Cmd):
         """ Help information for the update class """
         print("Updates an object with new information")
         print("Usage: update <className> <id> <attName> <attVal>\n")
-# added second blank line here to satisfy pycodestyle
 
 
 if __name__ == "__main__":
