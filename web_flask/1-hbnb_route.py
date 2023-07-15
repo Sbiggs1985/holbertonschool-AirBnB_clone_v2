@@ -1,6 +1,8 @@
 #!/usr/bin/python3
+"""
+Write a script that starts aa Flask Web Application
+"""
 
-Imports Flask
 from flask import Flask
 
 # Creates an instance of Flask
